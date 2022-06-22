@@ -10,11 +10,19 @@
     </parent>
     <groupId>com.example</groupId>
     <artifactId>web-demo</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.2.0</version>
     <name>web-demo</name>
     <description>Demo project for Spring Boot</description>
     <properties>
         <java.version>1.8</java.version>
+
+        <docker.plugin.version>0.32.0</docker.plugin.version>
+        <docker.host>http://192.168.56.10:2375</docker.host>
+        <docker.registry>192.168.56.10:5000</docker.registry>
+        <docker.namespace>library</docker.namespace>
+        <docker.username>username</docker.username>
+        <docker.password>passwrod</docker.password>
+
     </properties>
     <dependencies>
         <dependency>
@@ -29,14 +37,47 @@
         </dependency>
     </dependencies>
 
+
     <build>
+
         <finalName>web-demo</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>${docker.plugin.version}</version>
+                <configuration>
+                    <!-- Docker Remote Api-->
+                    <dockerHost>${docker.host}</dockerHost>
+                    <!-- Docker 镜像私服-->
+                    <registry>${docker.registry}</registry>
+                    <!-- 认证信息-->
+                    <authConfig>
+                        <push>
+                            <username>${docker.username}</username>
+                            <password>${docker.password}</password>
+                        </push>
+                    </authConfig>
+                    <images>
+                        <image>
+                            <!-- 镜像名称： 172.17.0.111/library/xxxx:2.6.3-->
+                            <name>${docker.registry}/${docker.namespace}/${project.name}:${project.version}</name>
+                            <build>
+                                <dockerFile>${project.basedir}/Dockerfile</dockerFile>
+                            </build>
+                        </image>
+                    </images>
+                </configuration>
+            </plugin>
+
         </plugins>
+
+
     </build>
 
 </project>

@@ -3,6 +3,8 @@ package com.example.webdemo.controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
+
 /**
  * 测试
  *
@@ -14,6 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class HelloController {
     @GetMapping("/")
     public String hello(){
-        return "发布成功2222"+System.currentTimeMillis();
+        return "发布成功"+ LocalDateTime.now();
     }
 }

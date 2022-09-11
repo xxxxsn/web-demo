@@ -14,6 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class HelloController {
     @GetMapping("/")
     public String hello(){
-        return "发布成功"+System.currentTimeMillis();
+        return "发布成功1"+System.currentTimeMillis();
     }
 }

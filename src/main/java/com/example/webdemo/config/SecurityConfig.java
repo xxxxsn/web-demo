@@ -1,71 +1,114 @@
-//package com.example.webdemo.config;
-//
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.context.annotation.Bean;
-//import org.springframework.context.annotation.Configuration;
-//import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-//import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-//import org.springframework.security.config.annotation.web.builders.WebSecurity;
-//import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-//import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-//import org.springframework.security.core.userdetails.UserDetailsService;
-//import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-//import org.springframework.security.crypto.password.PasswordEncoder;
-//import org.springframework.util.DigestUtils;
-//
-//import java.time.LocalDate;
-//import java.time.format.DateTimeFormatter;
-//
-//@SuppressWarnings("all")
-//@Configuration
-//@EnableWebSecurity
-//public class SecurityConfig extends WebSecurityConfigurerAdapter {
-//
-//    @Autowired
-//    private UserDetailsService userDetailsService;
-//
-//    @Override
-//    protected void configure(HttpSecurity http) throws Exception {
-//        http.authorizeRequests()
-//                .antMatchers("/api/**").authenticated() // 定义/api/**路径下的请求需要经过身份验证
-//                .and()
-//                .httpBasic()
-//                .and()
-//                .logout()
-//                .logoutUrl("/logout")//表示用户注销时需要访问的URL是/logout。
-//                .clearAuthentication(true) // 清除身份验证信息
-//                .logoutSuccessUrl("/admin")//表示用户成功注销后要重定向到的页面是/admin
-//                .invalidateHttpSession(true)//表示在注销时是否同时使HttpSession失效，默认为true。
-//                .deleteCookies("JSESSIONID")//表示在注销时将删除名为JSESSIONID的cookie。
-//                .permitAll()//表示任何用户都可以访问/logout端点，即使用户未登录也可以注销。
-//                .and()
-//                .csrf().disable()//禁用CSRF保护使得应用程序可以接受POST、PUT、DELETE等类型的请求，而不需要在请求中包含CSRF令牌。
-//                .formLogin().disable();//禁用了基于表单的身份认证，并使用.httpBasic()方法启用了HTTP Basic认证。
-//
-//    }
-//
-//
-//
-//    @Override
-//    public void configure(WebSecurity web) throws Exception {
-//        web.ignoring().antMatchers("/resources/**");
-//    }
-//
-//    @Bean
-//    public PasswordEncoder passwordEncoder() {
-//        return new BCryptPasswordEncoder();
-//    }
-//
-//    @Autowired
-//    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-//        String currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-//        String encryptedPassword = DigestUtils.md5DigestAsHex(currentDate.getBytes());
+package com.example.webdemo.config;
+
+import cn.hutool.json.JSONUtil;
+import lombok.extern.slf4j.Slf4j;
+import net.dreamlu.mica.core.result.R;
+import net.dreamlu.mica.core.utils.StringUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import javax.servlet.http.HttpServletResponse;
+
+@Slf4j
+@EnableWebSecurity
+@EnableGlobalMethodSecurity(prePostEnabled = true,securedEnabled = true)
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+    @Autowired
+    private UserDetailServiceImpl UserDetailService;
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests()
+                //某些接口不进行拦截
+                .antMatchers("/*/query").permitAll()
+                // 任何路径下的请求需要经过身份验证
+                .anyRequest().authenticated();
+
+
+        http.formLogin()
+                //认证成功处理器
+                .successHandler((request, response, authentication) -> {
+                    log.info("认证成功");
+                    String redirect = request.getParameter("redirect");
+                    if (StringUtil.isNoneBlank(redirect)) {
+                        log.info(redirect);
+                        response.sendRedirect(redirect);
+                    } else {
+                        response.setContentType("application/json;charset=UTF-8");
+                        response.setStatus(HttpServletResponse.SC_OK);
+                        response.getWriter().write(JSONUtil.toJsonStr(R.success("认证成功")));
+                    }
+                })
+
+                //认证失败处理器
+                .failureHandler((request, response, exception) -> {
+                    log.info("密码错误，请重新输入");
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write(JSONUtil.toJsonStr(R.success("密码错误，请重新输入。")));
+                })
+                //登录放行
+                .permitAll();
+
+
+        //异常访问权限的处理器
+        http.exceptionHandling()
+                .accessDeniedHandler((httpServletRequest, response, e) -> {
+                    log.info("没有权限");
+                    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                    log.info(JSONUtil.toJsonStr(authentication));
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.getWriter().write(JSONUtil.toJsonStr(R.success("没有权限")));
+                });
+
+        //退出成功处理器
+        http.logout()
+                .logoutSuccessHandler((httpServletRequest, response, authentication) -> {
+                    log.info("退出成功");
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    response.getWriter().write(JSONUtil.toJsonStr(R.success("退出成功")));
+                })
+                //退出放行
+                .permitAll();
+    }
+
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+
+        auth.userDetailsService(UserDetailService).passwordEncoder(passwordEncoder());
+
 //        auth.inMemoryAuthentication()
-//                .withUser("test")
-//                .password(passwordEncoder().encode("123456"))
-//                .roles("USER");
+//                .withUser("admin")
+//                .password(passwordEncoder().encode("111"))
+//                .roles("admin");  //转变为 ROLE_admin权限
 //
-//
-//    }
-//
-//}
+//        auth.inMemoryAuthentication()
+//                // 定义用户名
+//                .withUser("student")
+//                // 将今天的日期加密后作为密码进行存储
+//                .password(passwordEncoder().encode("111"))
+//                .authorities("student:query", "student:add", "student:update");
+//        auth.inMemoryAuthentication()
+//                .withUser("user")
+//                .password(passwordEncoder().encode("111"))
+//                .authorities("user:query");
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+
+}

@@ -1,6 +1,7 @@
 package com.example.webdemo.controller;
 
 import net.dreamlu.mica.core.result.R;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,13 +25,14 @@ public class UserController {
         return R.success("增加一条用户信息");
     }
 
-    @PreAuthorize("hasAuthority('user:add')")
+    @PreAuthorize("hasAuthority('user:update')")
     @GetMapping("/update")
     public R update() {
         return R.success("更新一条用户信息");
     }
 
-    @PreAuthorize("hasAuthority('user:add')")
+//    @PreAuthorize("hasAuthority('user:delete')")
+    @Secured("user:delete")
     @GetMapping("/delete")
     public R delete() {
         return R.success("删除一条用户信息");

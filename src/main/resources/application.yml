@@ -6,6 +6,7 @@ spring:
         username: root
 
 
+
 # MyBatis Plus配置
 mybatis-plus:
     # 搜索指定包别名
@@ -16,3 +17,5 @@ mybatis-plus:
     #  configLocation: classpath:mybatis/mybatis-config.xml
     configuration:
         log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+server:
+    port: 8083

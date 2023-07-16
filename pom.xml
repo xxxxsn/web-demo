@@ -64,6 +64,15 @@
             <version>8.0.31</version>
         </dependency>
 
+            <!-- JWT实现库 -->
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt</artifactId>
+                <version>0.9.1</version>
+            </dependency>
+
+
+
 
         <!-- mybatis-plus 增强CRUD -->
         <dependency>

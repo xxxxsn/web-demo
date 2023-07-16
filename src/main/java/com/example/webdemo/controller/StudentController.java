@@ -2,6 +2,7 @@ package com.example.webdemo.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import net.dreamlu.mica.core.result.R;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
